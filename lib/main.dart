@@ -77,6 +77,12 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     }
 
+    updateNoto(idx, newNoto) {
+      setState(() {
+        timers[idx].noto = newNoto;
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -89,6 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       body: TimerList(
+        updateNoto: updateNoto,
         updateActive: updateActive,
         updateEvery: updateEvery,
         timers: timers,
@@ -103,12 +110,14 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class TimerList extends StatelessWidget {
+  final Function(int idx, String newNoto) updateNoto;
   final Function(int idx, time.Duration newActive) updateActive;
   final Function(int idx, time.Duration newEvery) updateEvery;
   final List<time.Timer> timers;
 
   const TimerList({
     super.key,
+    required this.updateNoto,
     required this.updateActive,
     required this.updateEvery,
     required this.timers,
@@ -123,12 +132,14 @@ class TimerList extends StatelessWidget {
             ? const EdgeInsets.only(bottom: 60.0)
             : EdgeInsets.zero;
 
+        doUpdateNoto(String newNoto) => updateNoto(idx, newNoto);
         doUpdateActive(time.Duration newActive) => updateActive(idx, newActive);
         doUpdateEvery(time.Duration newEvery) => updateEvery(idx, newEvery);
 
         return TimerCard(
           pad: pad,
           timer: timers[idx],
+          doUpdateNoto: doUpdateNoto,
           doUpdateActive: doUpdateActive,
           doUpdateEvery: doUpdateEvery,
         );
@@ -142,6 +153,7 @@ class TimerCard extends StatefulWidget {
     super.key,
     required this.pad,
     required this.timer,
+    required this.doUpdateNoto,
     required this.doUpdateActive,
     required this.doUpdateEvery,
   });
@@ -149,6 +161,7 @@ class TimerCard extends StatefulWidget {
   final EdgeInsets pad;
 
   final time.Timer timer;
+  final Function(String newNoto) doUpdateNoto;
   final Function(time.Duration newValue) doUpdateActive;
   final Function(time.Duration newValue) doUpdateEvery;
 
@@ -174,7 +187,19 @@ class _TimerCardState extends State<TimerCard> {
       innerContent = Row(
         children: [
           SelectableCard(
-            onTap: () async {},
+            onTap: () async {
+              var text = await showDialog(
+                context: context,
+                builder: (context) => StringSelector(
+                  start: widget.timer.noto,
+                  title: 'Notification text',
+                ),
+              );
+
+              if (text != null) {
+                widget.doUpdateNoto(text);
+              }
+            },
             label: Text(widget.timer.noto),
           ),
           Text('for'),
@@ -372,6 +397,73 @@ class _DurationSelectorState extends State<DurationSelector> {
               context,
               time.Duration(int.parse(amountController.text), magnitude),
             );
+          },
+          child: const Text('OK'),
+        ),
+      ],
+    );
+  }
+}
+
+class StringSelector extends StatefulWidget {
+  final String start;
+  final String title;
+
+  const StringSelector({
+    super.key,
+    required this.start,
+    required this.title,
+  });
+
+  @override
+  State<StringSelector> createState() => _StringSelectorState();
+}
+
+class _StringSelectorState extends State<StringSelector> {
+  final _formKey = GlobalKey<FormState>();
+
+  String? _validString(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Value required';
+    }
+
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var amountController = TextEditingController(text: widget.start);
+
+    return AlertDialog(
+      title: Text(widget.title),
+      content: Form(
+        key: _formKey,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: TextFormField(
+            controller: amountController,
+            keyboardType: TextInputType.text,
+            decoration: const InputDecoration(hintText: 'Text'),
+            validator: (value) => _validString(value),
+          ),
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            if (_formKey.currentState == null) {
+              return;
+            }
+
+            if (!_formKey.currentState!.validate()) {
+              return;
+            }
+
+            Navigator.pop(context, amountController.text);
           },
           child: const Text('OK'),
         ),
