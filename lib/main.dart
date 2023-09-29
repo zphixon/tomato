@@ -180,60 +180,106 @@ class _TimerCardState extends State<TimerCard> {
       });
     }
 
+    List<Widget> cards = [
+      SelectableCard(
+        onTap: () async {
+          var text = await showDialog(
+            context: context,
+            builder: (context) => StringSelector(
+              start: widget.timer.noto,
+              title: 'Notification text',
+            ),
+          );
+
+          if (text != null) {
+            widget.doUpdateNoto(text);
+          }
+        },
+        label: Text(widget.timer.noto),
+      ),
+      Text('for'),
+      SelectableCard(
+        onTap: () async {
+          var selected = await showDialog<time.Duration>(
+            context: context,
+            builder: (ctx) => DurationSelector(
+              start: widget.timer.interval.active,
+              title: 'Select length of alert',
+            ),
+          );
+          if (selected != null) {
+            widget.doUpdateActive(selected);
+          }
+        },
+        label: Text(widget.timer.interval.active.toString()),
+      ),
+      Text('every'),
+      SelectableCard(
+        onTap: () async {
+          var selected = await showDialog<time.Duration>(
+            context: context,
+            builder: (ctx) => DurationSelector(
+              start: widget.timer.interval.every,
+              title: 'Select time between alerts',
+            ),
+          );
+          if (selected != null) {
+            widget.doUpdateEvery(selected);
+          }
+        },
+        label: Text(widget.timer.interval.every.toString()),
+      ),
+    ];
+
+    var toggleExpandButton = IconButton(
+      icon: Icon(_expanded
+          ? Icons.arrow_drop_up_rounded
+          : Icons.arrow_drop_down_rounded),
+      onPressed: toggleExpand,
+    );
+
     Widget innerContent;
     if (_expanded) {
-      innerContent = Text('wowee!!!');
+      innerContent = Row(
+        children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: cards[0]),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                    child: Wrap(
+                      direction: Axis.horizontal,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: cards.sublist(1),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          toggleExpandButton,
+        ],
+      );
     } else {
       innerContent = Row(
         children: [
-          SelectableCard(
-            onTap: () async {
-              var text = await showDialog(
-                context: context,
-                builder: (context) => StringSelector(
-                  start: widget.timer.noto,
-                  title: 'Notification text',
-                ),
-              );
-
-              if (text != null) {
-                widget.doUpdateNoto(text);
-              }
-            },
-            label: Text(widget.timer.noto),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: cards,
+              ),
+            ),
           ),
-          Text('for'),
-          SelectableCard(
-            onTap: () async {
-              var selected = await showDialog<time.Duration>(
-                context: context,
-                builder: (ctx) => DurationSelector(
-                  start: widget.timer.interval.active,
-                  title: 'Select length of alert',
-                ),
-              );
-              if (selected != null) {
-                widget.doUpdateActive(selected);
-              }
-            },
-            label: Text(widget.timer.interval.active.toString()),
-          ),
-          Text('every'),
-          SelectableCard(
-            onTap: () async {
-              var selected = await showDialog<time.Duration>(
-                context: context,
-                builder: (ctx) => DurationSelector(
-                  start: widget.timer.interval.every,
-                  title: 'Select time between alerts',
-                ),
-              );
-              if (selected != null) {
-                widget.doUpdateEvery(selected);
-              }
-            },
-            label: Text(widget.timer.interval.every.toString()),
-          ),
+          toggleExpandButton,
         ],
       );
     }
@@ -245,20 +291,7 @@ class _TimerCardState extends State<TimerCard> {
           onTap: toggleExpand,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 5),
-            child: Row(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: innerContent,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.arrow_drop_down),
-                  onPressed: toggleExpand,
-                ),
-              ],
-            ),
+            child: innerContent,
           ),
         ),
       ),
