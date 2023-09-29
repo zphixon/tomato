@@ -173,80 +173,41 @@ class _TimerCardState extends State<TimerCard> {
     } else {
       innerContent = Row(
         children: [
-          Card(
-            elevation: 0,
-            color: Theme.of(context).colorScheme.surfaceVariant,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(4),
-              onTap: () async {},
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 5.0,
-                  horizontal: 15.0,
-                ),
-                child: Text(widget.timer.noto),
-              ),
-            ),
+          SelectableCard(
+            onTap: () async {},
+            label: Text(widget.timer.noto),
           ),
           Text('for'),
-          Card(
-            elevation: 0,
-            color: Theme.of(context).colorScheme.surfaceVariant,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(4),
-              onTap: () async {
-                var selected = await showDialog<time.Duration>(
-                  context: context,
-                  builder: (ctx) => DurationSelector(
-                    start: widget.timer.interval.active,
-                    title: 'Select length of alert',
-                  ),
-                );
-                if (selected != null) {
-                  widget.doUpdateActive(selected);
-                }
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 5.0,
-                  horizontal: 15.0,
+          SelectableCard(
+            onTap: () async {
+              var selected = await showDialog<time.Duration>(
+                context: context,
+                builder: (ctx) => DurationSelector(
+                  start: widget.timer.interval.active,
+                  title: 'Select length of alert',
                 ),
-                child: Text(widget.timer.interval.active.toString()),
-              ),
-            ),
+              );
+              if (selected != null) {
+                widget.doUpdateActive(selected);
+              }
+            },
+            label: Text(widget.timer.interval.active.toString()),
           ),
           Text('every'),
-          Card(
-            elevation: 0,
-            color: Theme.of(context).colorScheme.surfaceVariant,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(4),
-              onTap: () async {
-                var selected = await showDialog<time.Duration>(
-                  context: context,
-                  builder: (ctx) => DurationSelector(
-                    start: widget.timer.interval.every,
-                    title: 'Select time between alerts',
-                  ),
-                );
-                if (selected != null) {
-                  widget.doUpdateEvery(selected);
-                }
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 5.0,
-                  horizontal: 15.0,
+          SelectableCard(
+            onTap: () async {
+              var selected = await showDialog<time.Duration>(
+                context: context,
+                builder: (ctx) => DurationSelector(
+                  start: widget.timer.interval.every,
+                  title: 'Select time between alerts',
                 ),
-                child: Text(widget.timer.interval.every.toString()),
-              ),
-            ),
+              );
+              if (selected != null) {
+                widget.doUpdateEvery(selected);
+              }
+            },
+            label: Text(widget.timer.interval.every.toString()),
           ),
         ],
       );
@@ -274,6 +235,37 @@ class _TimerCardState extends State<TimerCard> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class SelectableCard extends StatelessWidget {
+  const SelectableCard({
+    super.key,
+    required this.onTap,
+    required this.label,
+  });
+
+  final Future Function() onTap;
+  final Text label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surfaceVariant,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(4),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: 5.0,
+            horizontal: 15.0,
+          ),
+          child: label,
         ),
       ),
     );
