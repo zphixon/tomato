@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum Magnitude {
   days,
   hours,
@@ -52,4 +54,19 @@ class Duration {
 class IntervalPeriod {
   Duration active, every;
   IntervalPeriod(this.active, this.every);
+}
+
+class Timer {
+  IntervalPeriod interval;
+  String noto;
+
+  Timer(this.interval, this.noto);
+}
+
+class Schedule {
+  IntervalPeriod period;
+  TimeOfDay? start;
+  TimeOfDay? end;
+
+  Schedule(this.period);
 }

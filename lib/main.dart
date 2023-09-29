@@ -32,22 +32,34 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<time.IntervalPeriod> intervals = [
-    time.IntervalPeriod(
-      time.Duration(10, time.Magnitude.minutes),
-      time.Duration(1, time.Magnitude.hours),
+  List<time.Timer> timers = [
+    time.Timer(
+      time.IntervalPeriod(
+        time.Duration(10, time.Magnitude.minutes),
+        time.Duration(1, time.Magnitude.hours),
+      ),
+      'Stand up',
     ),
-    time.IntervalPeriod(
-      time.Duration(10, time.Magnitude.minutes),
-      time.Duration(1, time.Magnitude.hours),
+    time.Timer(
+      time.IntervalPeriod(
+        time.Duration(10, time.Magnitude.minutes),
+        time.Duration(1, time.Magnitude.hours),
+      ),
+      'Sit down',
     ),
-    time.IntervalPeriod(
-      time.Duration(10, time.Magnitude.minutes),
-      time.Duration(1, time.Magnitude.hours),
+    time.Timer(
+      time.IntervalPeriod(
+        time.Duration(10, time.Magnitude.minutes),
+        time.Duration(1, time.Magnitude.hours),
+      ),
+      'Jump around',
     ),
-    time.IntervalPeriod(
-      time.Duration(10, time.Magnitude.minutes),
-      time.Duration(1, time.Magnitude.hours),
+    time.Timer(
+      time.IntervalPeriod(
+        time.Duration(10, time.Magnitude.minutes),
+        time.Duration(1, time.Magnitude.hours),
+      ),
+      'Screech',
     ),
   ];
 
@@ -55,13 +67,13 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     updateActive(idx, newActive) {
       setState(() {
-        intervals[idx].active = newActive;
+        timers[idx].interval.active = newActive;
       });
     }
 
     updateEvery(idx, newEvery) {
       setState(() {
-        intervals[idx].every = newEvery;
+        timers[idx].interval.every = newEvery;
       });
     }
 
@@ -79,7 +91,7 @@ class _MyHomePageState extends State<MyHomePage> {
       body: TimerList(
         updateActive: updateActive,
         updateEvery: updateEvery,
-        intervals: intervals,
+        timers: timers,
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
@@ -93,21 +105,21 @@ class _MyHomePageState extends State<MyHomePage> {
 class TimerList extends StatelessWidget {
   final Function(int idx, time.Duration newActive) updateActive;
   final Function(int idx, time.Duration newEvery) updateEvery;
-  final List<time.IntervalPeriod> intervals;
+  final List<time.Timer> timers;
 
   const TimerList({
     super.key,
     required this.updateActive,
     required this.updateEvery,
-    required this.intervals,
+    required this.timers,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      itemCount: intervals.length,
+      itemCount: timers.length,
       itemBuilder: (ctx, idx) {
-        var pad = idx + 1 == intervals.length
+        var pad = idx + 1 == timers.length
             ? const EdgeInsets.only(bottom: 60.0)
             : EdgeInsets.zero;
 
@@ -116,7 +128,7 @@ class TimerList extends StatelessWidget {
 
         return TimerCard(
           pad: pad,
-          interval: intervals[idx],
+          timer: timers[idx],
           doUpdateActive: doUpdateActive,
           doUpdateEvery: doUpdateEvery,
         );
@@ -129,13 +141,14 @@ class TimerCard extends StatefulWidget {
   const TimerCard({
     super.key,
     required this.pad,
-    required this.interval,
+    required this.timer,
     required this.doUpdateActive,
     required this.doUpdateEvery,
   });
 
   final EdgeInsets pad;
-  final time.IntervalPeriod interval;
+
+  final time.Timer timer;
   final Function(time.Duration newValue) doUpdateActive;
   final Function(time.Duration newValue) doUpdateEvery;
 
@@ -159,7 +172,6 @@ class _TimerCardState extends State<TimerCard> {
       content = Text('wowee!!!');
     } else {
       content = Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Card(
             elevation: 0,
@@ -169,12 +181,12 @@ class _TimerCardState extends State<TimerCard> {
             child: InkWell(
               borderRadius: BorderRadius.circular(4),
               onTap: () async {},
-              child: const Padding(
-                padding: EdgeInsets.symmetric(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
                   vertical: 5.0,
                   horizontal: 15.0,
-                ),
-                child: Text('Stand up'),
+                ),  
+                  child: Text(widget.timer.noto),
               ),
             ),
           ),
@@ -189,8 +201,8 @@ class _TimerCardState extends State<TimerCard> {
               onTap: () async {
                 var selected = await showDialog<time.Duration>(
                   context: context,
-                  builder: (ctx) => TimeSelector(
-                    start: widget.interval.active,
+                  builder: (ctx) => DurationSelector(
+                    start: widget.timer.interval.active,
                     title: 'Select length of alert',
                   ),
                 );
@@ -203,7 +215,7 @@ class _TimerCardState extends State<TimerCard> {
                   vertical: 5.0,
                   horizontal: 15.0,
                 ),
-                child: Text(widget.interval.active.toString()),
+                child: Text(widget.timer.interval.active.toString()),
               ),
             ),
           ),
@@ -218,8 +230,8 @@ class _TimerCardState extends State<TimerCard> {
               onTap: () async {
                 var selected = await showDialog<time.Duration>(
                   context: context,
-                  builder: (ctx) => TimeSelector(
-                    start: widget.interval.every,
+                  builder: (ctx) => DurationSelector(
+                    start: widget.timer.interval.every,
                     title: 'Select time between alerts',
                   ),
                 );
@@ -232,7 +244,7 @@ class _TimerCardState extends State<TimerCard> {
                   vertical: 5.0,
                   horizontal: 15.0,
                 ),
-                child: Text(widget.interval.every.toString()),
+                child: Text(widget.timer.interval.every.toString()),
               ),
             ),
           ),
@@ -264,21 +276,21 @@ class _TimerCardState extends State<TimerCard> {
   }
 }
 
-class TimeSelector extends StatefulWidget {
+class DurationSelector extends StatefulWidget {
   final time.Duration start;
   final String title;
 
-  const TimeSelector({
+  const DurationSelector({
     super.key,
     required this.start,
     required this.title,
   });
 
   @override
-  State<TimeSelector> createState() => _TimeSelectorState();
+  State<DurationSelector> createState() => _DurationSelectorState();
 }
 
-class _TimeSelectorState extends State<TimeSelector> {
+class _DurationSelectorState extends State<DurationSelector> {
   final _formKey = GlobalKey<FormState>();
 
   String? _validNumber(String? value, time.Magnitude magnitude) {
