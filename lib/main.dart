@@ -259,23 +259,17 @@ class _TimerCardState extends State<TimerCard> {
           onTap: toggleExpand,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 5),
-            child: Stack(
+            child: Row(
               children: [
-                Positioned.fill(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: innerContent,
-                    ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: innerContent,
                   ),
                 ),
-                Container(
-                  alignment: Alignment.centerRight,
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_drop_down),
-                    onPressed: toggleExpand,
-                  ),
+                IconButton(
+                  icon: const Icon(Icons.arrow_drop_down),
+                  onPressed: toggleExpand,
                 ),
               ],
             ),
