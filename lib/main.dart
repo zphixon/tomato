@@ -167,11 +167,11 @@ class _TimerCardState extends State<TimerCard> {
       });
     }
 
-    Widget content;
+    Widget innerContent;
     if (_expanded) {
-      content = Text('wowee!!!');
+      innerContent = Text('wowee!!!');
     } else {
-      content = Row(
+      innerContent = Row(
         children: [
           Card(
             elevation: 0,
@@ -185,8 +185,8 @@ class _TimerCardState extends State<TimerCard> {
                 padding: const EdgeInsets.symmetric(
                   vertical: 5.0,
                   horizontal: 15.0,
-                ),  
-                  child: Text(widget.timer.noto),
+                ),
+                child: Text(widget.timer.noto),
               ),
             ),
           ),
@@ -248,15 +248,6 @@ class _TimerCardState extends State<TimerCard> {
               ),
             ),
           ),
-          Expanded(
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_drop_down),
-                onPressed: toggleExpand,
-              ),
-            ),
-          ),
         ],
       );
     }
@@ -268,7 +259,26 @@ class _TimerCardState extends State<TimerCard> {
           onTap: toggleExpand,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 5),
-            child: content,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: innerContent,
+                    ),
+                  ),
+                ),
+                Container(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_drop_down),
+                    onPressed: toggleExpand,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
