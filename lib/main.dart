@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'interval.dart' as interval;
+import 'time.dart' as time;
 
 void main() {
   runApp(const MyApp());
@@ -65,32 +65,32 @@ class TimerList extends StatefulWidget {
 }
 
 class _TimerListState extends State<TimerList> {
-  List<interval.Interval> intervals = [
-    interval.Interval(
-      interval.Time(10, interval.TimeMagnitude.minutes),
-      interval.Time(1, interval.TimeMagnitude.hours),
+  List<time.IntervalPeriod> intervals = [
+    time.IntervalPeriod(
+      time.Duration(10, time.Magnitude.minutes),
+      time.Duration(1, time.Magnitude.hours),
     ),
-    interval.Interval(
-      interval.Time(10, interval.TimeMagnitude.minutes),
-      interval.Time(1, interval.TimeMagnitude.hours),
+    time.IntervalPeriod(
+      time.Duration(10, time.Magnitude.minutes),
+      time.Duration(1, time.Magnitude.hours),
     ),
-    interval.Interval(
-      interval.Time(10, interval.TimeMagnitude.minutes),
-      interval.Time(1, interval.TimeMagnitude.hours),
+    time.IntervalPeriod(
+      time.Duration(10, time.Magnitude.minutes),
+      time.Duration(1, time.Magnitude.hours),
     ),
-    interval.Interval(
-      interval.Time(10, interval.TimeMagnitude.minutes),
-      interval.Time(1, interval.TimeMagnitude.hours),
+    time.IntervalPeriod(
+      time.Duration(10, time.Magnitude.minutes),
+      time.Duration(1, time.Magnitude.hours),
     ),
   ];
 
-  _updateActive(int index, interval.Time newValue) {
+  _updateActive(int index, time.Duration newValue) {
     setState(() {
-      intervals[index].activeTime = newValue;
+      intervals[index].active = newValue;
     });
   }
 
-  _updateEvery(int index, interval.Time newValue) {
+  _updateEvery(int index, time.Duration newValue) {
     setState(() {
       intervals[index].every = newValue;
     });
@@ -105,7 +105,7 @@ class _TimerListState extends State<TimerList> {
             ? const EdgeInsets.only(bottom: 60.0)
             : EdgeInsets.zero;
 
-        var activeTime = intervals[idx].activeTime;
+        var activeTime = intervals[idx].active;
         var every = intervals[idx].every;
         doUpdateActive(newValue) => _updateActive(idx, newValue);
         doUpdateEvery(newValue) => _updateEvery(idx, newValue);
@@ -133,9 +133,9 @@ class TimerCard extends StatefulWidget {
   });
 
   final EdgeInsets pad;
-  final interval.Time activeTime;
+  final time.Duration activeTime;
   final Function(dynamic newValue) doUpdateActive;
-  final interval.Time every;
+  final time.Duration every;
   final Function(dynamic newValue) doUpdateEvery;
 
   @override
@@ -186,7 +186,7 @@ class _TimerCardState extends State<TimerCard> {
             child: InkWell(
               borderRadius: BorderRadius.circular(4),
               onTap: () async {
-                var selected = await showDialog<interval.Time>(
+                var selected = await showDialog<time.Duration>(
                   context: context,
                   builder: (ctx) => TimeSelector(
                     start: widget.activeTime,
@@ -215,7 +215,7 @@ class _TimerCardState extends State<TimerCard> {
             child: InkWell(
               borderRadius: BorderRadius.circular(4),
               onTap: () async {
-                var selected = await showDialog<interval.Time>(
+                var selected = await showDialog<time.Duration>(
                   context: context,
                   builder: (ctx) => TimeSelector(
                     start: widget.every,
@@ -264,7 +264,7 @@ class _TimerCardState extends State<TimerCard> {
 }
 
 class TimeSelector extends StatefulWidget {
-  final interval.Time start;
+  final time.Duration start;
   final String title;
 
   const TimeSelector({
@@ -280,7 +280,7 @@ class TimeSelector extends StatefulWidget {
 class _TimeSelectorState extends State<TimeSelector> {
   final _formKey = GlobalKey<FormState>();
 
-  String? _validNumber(String? value, interval.TimeMagnitude magnitude) {
+  String? _validNumber(String? value, time.Magnitude magnitude) {
     if (value == null) {
       return 'Value required';
     }
@@ -294,14 +294,13 @@ class _TimeSelectorState extends State<TimeSelector> {
       return 'Not enough time';
     }
 
-    if (magnitude == interval.TimeMagnitude.days && parsed > 365) {
+    if (magnitude == time.Magnitude.days && parsed > 365) {
       return 'Too many days';
-    } else if (magnitude == interval.TimeMagnitude.hours && parsed > 8760) {
+    } else if (magnitude == time.Magnitude.hours && parsed > 8760) {
       return 'Too many hours';
-    } else if (magnitude == interval.TimeMagnitude.minutes && parsed > 525600) {
+    } else if (magnitude == time.Magnitude.minutes && parsed > 525600) {
       return 'Too many minutes';
-    } else if (magnitude == interval.TimeMagnitude.seconds &&
-        parsed > 31536000) {
+    } else if (magnitude == time.Magnitude.seconds && parsed > 31536000) {
       return 'Too many seconds';
     }
 
@@ -312,7 +311,7 @@ class _TimeSelectorState extends State<TimeSelector> {
   Widget build(BuildContext context) {
     var amountController =
         TextEditingController(text: widget.start.amount.toString());
-    var magnitude = widget.start.period;
+    var magnitude = widget.start.magnitude;
 
     return AlertDialog(
       title: Text(widget.title),
@@ -330,10 +329,10 @@ class _TimeSelectorState extends State<TimeSelector> {
               ),
             ),
           ),
-          DropdownMenu<interval.TimeMagnitude>(
+          DropdownMenu<time.Magnitude>(
             requestFocusOnTap: false,
-            initialSelection: widget.start.period,
-            dropdownMenuEntries: interval.TimeMagnitude.values
+            initialSelection: widget.start.magnitude,
+            dropdownMenuEntries: time.Magnitude.values
                 .map((value) =>
                     DropdownMenuEntry(label: value.toString(), value: value))
                 .toList(),
@@ -362,7 +361,7 @@ class _TimeSelectorState extends State<TimeSelector> {
 
             Navigator.pop(
               context,
-              interval.Time(int.parse(amountController.text), magnitude),
+              time.Duration(int.parse(amountController.text), magnitude),
             );
           },
           child: const Text('OK'),
