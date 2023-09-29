@@ -32,39 +32,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-        actions: <Widget>[
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.settings),
-          ),
-        ],
-      ),
-      body: const TimerList(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        tooltip: 'Add timer',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
-  }
-}
-
-class TimerList extends StatefulWidget {
-  const TimerList({
-    super.key,
-  });
-
-  @override
-  State<TimerList> createState() => _TimerListState();
-}
-
-class _TimerListState extends State<TimerList> {
   List<time.IntervalPeriod> intervals = [
     time.IntervalPeriod(
       time.Duration(10, time.Magnitude.minutes),
@@ -84,17 +51,56 @@ class _TimerListState extends State<TimerList> {
     ),
   ];
 
-  _updateActive(int index, time.Duration newValue) {
-    setState(() {
-      intervals[index].active = newValue;
-    });
-  }
+  @override
+  Widget build(BuildContext context) {
+    updateActive(idx, newActive) {
+      setState(() {
+        intervals[idx].active = newActive;
+      });
+    }
 
-  _updateEvery(int index, time.Duration newValue) {
-    setState(() {
-      intervals[index].every = newValue;
-    });
+    updateEvery(idx, newEvery) {
+      setState(() {
+        intervals[idx].every = newEvery;
+      });
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: Text(widget.title),
+        actions: <Widget>[
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.settings),
+          ),
+        ],
+      ),
+      body: TimerList(
+        updateActive: updateActive,
+        updateEvery: updateEvery,
+        intervals: intervals,
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        tooltip: 'Add timer',
+        child: const Icon(Icons.add),
+      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
   }
+}
+
+class TimerList extends StatelessWidget {
+  final Function(int idx, time.Duration newActive) updateActive;
+  final Function(int idx, time.Duration newEvery) updateEvery;
+  final List<time.IntervalPeriod> intervals;
+
+  const TimerList({
+    super.key,
+    required this.updateActive,
+    required this.updateEvery,
+    required this.intervals,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -105,16 +111,13 @@ class _TimerListState extends State<TimerList> {
             ? const EdgeInsets.only(bottom: 60.0)
             : EdgeInsets.zero;
 
-        var activeTime = intervals[idx].active;
-        var every = intervals[idx].every;
-        doUpdateActive(newValue) => _updateActive(idx, newValue);
-        doUpdateEvery(newValue) => _updateEvery(idx, newValue);
+        doUpdateActive(time.Duration newActive) => updateActive(idx, newActive);
+        doUpdateEvery(time.Duration newEvery) => updateEvery(idx, newEvery);
 
         return TimerCard(
           pad: pad,
-          activeTime: activeTime,
+          interval: intervals[idx],
           doUpdateActive: doUpdateActive,
-          every: every,
           doUpdateEvery: doUpdateEvery,
         );
       },
@@ -126,17 +129,15 @@ class TimerCard extends StatefulWidget {
   const TimerCard({
     super.key,
     required this.pad,
-    required this.activeTime,
+    required this.interval,
     required this.doUpdateActive,
-    required this.every,
     required this.doUpdateEvery,
   });
 
   final EdgeInsets pad;
-  final time.Duration activeTime;
-  final Function(dynamic newValue) doUpdateActive;
-  final time.Duration every;
-  final Function(dynamic newValue) doUpdateEvery;
+  final time.IntervalPeriod interval;
+  final Function(time.Duration newValue) doUpdateActive;
+  final Function(time.Duration newValue) doUpdateEvery;
 
   @override
   State<TimerCard> createState() => _TimerCardState();
@@ -189,7 +190,7 @@ class _TimerCardState extends State<TimerCard> {
                 var selected = await showDialog<time.Duration>(
                   context: context,
                   builder: (ctx) => TimeSelector(
-                    start: widget.activeTime,
+                    start: widget.interval.active,
                     title: 'Select length of alert',
                   ),
                 );
@@ -202,7 +203,7 @@ class _TimerCardState extends State<TimerCard> {
                   vertical: 5.0,
                   horizontal: 15.0,
                 ),
-                child: Text(widget.activeTime.toString()),
+                child: Text(widget.interval.active.toString()),
               ),
             ),
           ),
@@ -218,7 +219,7 @@ class _TimerCardState extends State<TimerCard> {
                 var selected = await showDialog<time.Duration>(
                   context: context,
                   builder: (ctx) => TimeSelector(
-                    start: widget.every,
+                    start: widget.interval.every,
                     title: 'Select time between alerts',
                   ),
                 );
@@ -231,7 +232,7 @@ class _TimerCardState extends State<TimerCard> {
                   vertical: 5.0,
                   horizontal: 15.0,
                 ),
-                child: Text(widget.every.toString()),
+                child: Text(widget.interval.every.toString()),
               ),
             ),
           ),
