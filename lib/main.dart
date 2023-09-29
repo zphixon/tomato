@@ -163,7 +163,10 @@ class _TimerCardState extends State<TimerCard> {
           Card(
             elevation: 0,
             color: Theme.of(context).colorScheme.surfaceVariant,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
             child: InkWell(
+              borderRadius: BorderRadius.circular(4),
               onTap: () async {},
               child: const Padding(
                 padding: EdgeInsets.symmetric(
@@ -178,7 +181,10 @@ class _TimerCardState extends State<TimerCard> {
           Card(
             elevation: 0,
             color: Theme.of(context).colorScheme.surfaceVariant,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
             child: InkWell(
+              borderRadius: BorderRadius.circular(4),
               onTap: () async {
                 var selected = await showDialog<interval.Time>(
                   context: context,
@@ -204,7 +210,10 @@ class _TimerCardState extends State<TimerCard> {
           Card(
             elevation: 0,
             color: Theme.of(context).colorScheme.surfaceVariant,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
             child: InkWell(
+              borderRadius: BorderRadius.circular(4),
               onTap: () async {
                 var selected = await showDialog<interval.Time>(
                   context: context,
