@@ -139,6 +139,32 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     }
 
+    delete(idx) {
+      setState(() {
+        settings.timers.removeAt(idx);
+        widget.storage.writeSettings(settings);
+      });
+    }
+
+    create() {
+      setState(() {
+        settings.timers.add(time.Timer(
+          noto: 'New timer',
+          interval: time.IntervalPeriod(
+            active: time.Duration(
+              amount: 10,
+              magnitude: time.Magnitude.minutes,
+            ),
+            every: time.Duration(
+              amount: 1,
+              magnitude: time.Magnitude.hours,
+            ),
+          ),
+        ));
+        widget.storage.writeSettings(settings);
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -154,10 +180,11 @@ class _MyHomePageState extends State<MyHomePage> {
         updateNoto: updateNoto,
         updateActive: updateActive,
         updateEvery: updateEvery,
+        delete: delete,
         timers: settings.timers,
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: create,
         tooltip: 'Add timer',
         child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
@@ -169,6 +196,7 @@ class TimerList extends StatelessWidget {
   final Function(int idx, String newNoto) updateNoto;
   final Function(int idx, time.Duration newActive) updateActive;
   final Function(int idx, time.Duration newEvery) updateEvery;
+  final Function(int idx) delete;
   final List<time.Timer> timers;
 
   const TimerList({
@@ -176,6 +204,7 @@ class TimerList extends StatelessWidget {
     required this.updateNoto,
     required this.updateActive,
     required this.updateEvery,
+    required this.delete,
     required this.timers,
   });
 
@@ -191,6 +220,7 @@ class TimerList extends StatelessWidget {
         doUpdateNoto(String newNoto) => updateNoto(idx, newNoto);
         doUpdateActive(time.Duration newActive) => updateActive(idx, newActive);
         doUpdateEvery(time.Duration newEvery) => updateEvery(idx, newEvery);
+        doDelete() => delete(idx);
 
         return TimerCard(
           pad: pad,
@@ -198,6 +228,7 @@ class TimerList extends StatelessWidget {
           doUpdateNoto: doUpdateNoto,
           doUpdateActive: doUpdateActive,
           doUpdateEvery: doUpdateEvery,
+          doDelete: doDelete,
         );
       },
     );
@@ -212,6 +243,7 @@ class TimerCard extends StatelessWidget {
     required this.doUpdateNoto,
     required this.doUpdateActive,
     required this.doUpdateEvery,
+    required this.doDelete,
   });
 
   final EdgeInsets pad;
@@ -220,75 +252,84 @@ class TimerCard extends StatelessWidget {
   final Function(String newNoto) doUpdateNoto;
   final Function(time.Duration newValue) doUpdateActive;
   final Function(time.Duration newValue) doUpdateEvery;
+  final Function() doDelete;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: pad,
       child: Card(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SelectableCard(
-                onTap: () async {
-                  var text = await showDialog(
-                    context: context,
-                    builder: (context) => StringSelector(
-                      start: timer.noto,
-                      title: 'Notification text',
-                    ),
-                  );
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8.0),
+          //onTap: () {},
+          onLongPress: () {
+            // TODO show popup that lets you delete/disable/etc
+            doDelete();
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SelectableCard(
+                  onTap: () async {
+                    var text = await showDialog(
+                      context: context,
+                      builder: (context) => StringSelector(
+                        start: timer.noto,
+                        title: 'Notification text',
+                      ),
+                    );
 
-                  if (text != null) {
-                    doUpdateNoto(text);
-                  }
-                },
-                label: Text(timer.noto),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                child: Wrap(
-                  direction: Axis.horizontal,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    const Text('for'),
-                    SelectableCard(
-                      onTap: () async {
-                        var selected = await showDialog<time.Duration>(
-                          context: context,
-                          builder: (ctx) => DurationSelector(
-                            start: timer.interval.active,
-                            title: 'Select length of alert',
-                          ),
-                        );
-                        if (selected != null) {
-                          doUpdateActive(selected);
-                        }
-                      },
-                      label: Text(timer.interval.active.toString()),
-                    ),
-                    const Text('every'),
-                    SelectableCard(
-                      onTap: () async {
-                        var selected = await showDialog<time.Duration>(
-                          context: context,
-                          builder: (ctx) => DurationSelector(
-                            start: timer.interval.every,
-                            title: 'Select time between alerts',
-                          ),
-                        );
-                        if (selected != null) {
-                          doUpdateEvery(selected);
-                        }
-                      },
-                      label: Text(timer.interval.every.toString()),
-                    ),
-                  ],
+                    if (text != null) {
+                      doUpdateNoto(text);
+                    }
+                  },
+                  label: Text(timer.noto),
                 ),
-              ),
-            ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                  child: Wrap(
+                    direction: Axis.horizontal,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      const Text('for'),
+                      SelectableCard(
+                        onTap: () async {
+                          var selected = await showDialog<time.Duration>(
+                            context: context,
+                            builder: (ctx) => DurationSelector(
+                              start: timer.interval.active,
+                              title: 'Select length of alert',
+                            ),
+                          );
+                          if (selected != null) {
+                            doUpdateActive(selected);
+                          }
+                        },
+                        label: Text(timer.interval.active.toString()),
+                      ),
+                      const Text('every'),
+                      SelectableCard(
+                        onTap: () async {
+                          var selected = await showDialog<time.Duration>(
+                            context: context,
+                            builder: (ctx) => DurationSelector(
+                              start: timer.interval.every,
+                              title: 'Select time between alerts',
+                            ),
+                          );
+                          if (selected != null) {
+                            doUpdateEvery(selected);
+                          }
+                        },
+                        label: Text(timer.interval.every.toString()),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -425,7 +466,10 @@ class _DurationSelectorState extends State<DurationSelector> {
 
             Navigator.pop(
               context,
-              time.Duration(int.parse(amountController.text), magnitude),
+              time.Duration(
+                amount: int.parse(amountController.text),
+                magnitude: magnitude,
+              ),
             );
           },
           child: const Text('OK'),

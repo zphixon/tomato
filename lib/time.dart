@@ -40,7 +40,7 @@ class Duration {
   int amount;
   Magnitude magnitude;
 
-  Duration(this.amount, this.magnitude);
+  Duration({required this.amount, required this.magnitude});
 
   @override
   String toString() {
@@ -77,7 +77,7 @@ class Duration {
 
 class IntervalPeriod {
   Duration active, every;
-  IntervalPeriod(this.active, this.every);
+  IntervalPeriod({required this.active, required this.every});
 
   IntervalPeriod.fromJson(Map<String, dynamic> json)
       : active = Duration.fromJson(json['active']),
@@ -93,7 +93,7 @@ class Timer {
   IntervalPeriod interval;
   String noto;
 
-  Timer(this.interval, this.noto);
+  Timer({required this.interval, required this.noto});
 
   Timer.fromJson(Map<String, dynamic> json)
       : interval = IntervalPeriod.fromJson(json['interval']),
