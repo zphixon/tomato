@@ -204,7 +204,7 @@ class TimerList extends StatelessWidget {
   }
 }
 
-class TimerCard extends StatefulWidget {
+class TimerCard extends StatelessWidget {
   const TimerCard({
     super.key,
     required this.pad,
@@ -222,132 +222,73 @@ class TimerCard extends StatefulWidget {
   final Function(time.Duration newValue) doUpdateEvery;
 
   @override
-  State<TimerCard> createState() => _TimerCardState();
-}
-
-class _TimerCardState extends State<TimerCard> {
-  bool _expanded = false;
-
-  @override
   Widget build(BuildContext context) {
-    toggleExpand() {
-      setState(() {
-        _expanded = !_expanded;
-      });
-    }
-
-    List<Widget> cards = [
-      SelectableCard(
-        onTap: () async {
-          var text = await showDialog(
-            context: context,
-            builder: (context) => StringSelector(
-              start: widget.timer.noto,
-              title: 'Notification text',
-            ),
-          );
-
-          if (text != null) {
-            widget.doUpdateNoto(text);
-          }
-        },
-        label: Text(widget.timer.noto),
-      ),
-      Text('for'),
-      SelectableCard(
-        onTap: () async {
-          var selected = await showDialog<time.Duration>(
-            context: context,
-            builder: (ctx) => DurationSelector(
-              start: widget.timer.interval.active,
-              title: 'Select length of alert',
-            ),
-          );
-          if (selected != null) {
-            widget.doUpdateActive(selected);
-          }
-        },
-        label: Text(widget.timer.interval.active.toString()),
-      ),
-      Text('every'),
-      SelectableCard(
-        onTap: () async {
-          var selected = await showDialog<time.Duration>(
-            context: context,
-            builder: (ctx) => DurationSelector(
-              start: widget.timer.interval.every,
-              title: 'Select time between alerts',
-            ),
-          );
-          if (selected != null) {
-            widget.doUpdateEvery(selected);
-          }
-        },
-        label: Text(widget.timer.interval.every.toString()),
-      ),
-    ];
-
-    var toggleExpandButton = IconButton(
-      icon: Icon(_expanded
-          ? Icons.arrow_drop_up_rounded
-          : Icons.arrow_drop_down_rounded),
-      onPressed: toggleExpand,
-    );
-
-    Widget innerContent;
-    if (_expanded) {
-      innerContent = Row(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(child: cards[0]),
-                    ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                    child: Wrap(
-                      direction: Axis.horizontal,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: cards.sublist(1),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          toggleExpandButton,
-        ],
-      );
-    } else {
-      innerContent = Row(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: cards,
-              ),
-            ),
-          ),
-          toggleExpandButton,
-        ],
-      );
-    }
-
     return Padding(
-      padding: widget.pad,
+      padding: pad,
       child: Card(
-        child: InkWell(
-          onTap: toggleExpand,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 5),
-            child: innerContent,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SelectableCard(
+                onTap: () async {
+                  var text = await showDialog(
+                    context: context,
+                    builder: (context) => StringSelector(
+                      start: timer.noto,
+                      title: 'Notification text',
+                    ),
+                  );
+
+                  if (text != null) {
+                    doUpdateNoto(text);
+                  }
+                },
+                label: Text(timer.noto),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                child: Wrap(
+                  direction: Axis.horizontal,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    const Text('for'),
+                    SelectableCard(
+                      onTap: () async {
+                        var selected = await showDialog<time.Duration>(
+                          context: context,
+                          builder: (ctx) => DurationSelector(
+                            start: timer.interval.active,
+                            title: 'Select length of alert',
+                          ),
+                        );
+                        if (selected != null) {
+                          doUpdateActive(selected);
+                        }
+                      },
+                      label: Text(timer.interval.active.toString()),
+                    ),
+                    const Text('every'),
+                    SelectableCard(
+                      onTap: () async {
+                        var selected = await showDialog<time.Duration>(
+                          context: context,
+                          builder: (ctx) => DurationSelector(
+                            start: timer.interval.every,
+                            title: 'Select time between alerts',
+                          ),
+                        );
+                        if (selected != null) {
+                          doUpdateEvery(selected);
+                        }
+                      },
+                      label: Text(timer.interval.every.toString()),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
