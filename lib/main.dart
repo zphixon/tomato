@@ -165,6 +165,13 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     }
 
+    setEnabled(idx, newEnabled) {
+      setState(() {
+        settings.timers[idx].enabled = newEnabled;
+        widget.storage.writeSettings(settings);
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -181,6 +188,7 @@ class _MyHomePageState extends State<MyHomePage> {
         updateActive: updateActive,
         updateEvery: updateEvery,
         delete: delete,
+        setEnabled: setEnabled,
         timers: settings.timers,
       ),
       floatingActionButton: FloatingActionButton(
@@ -197,6 +205,7 @@ class TimerList extends StatelessWidget {
   final Function(int idx, time.Duration newActive) updateActive;
   final Function(int idx, time.Duration newEvery) updateEvery;
   final Function(int idx) delete;
+  final Function(int idx, bool newEnabled) setEnabled;
   final List<time.Timer> timers;
 
   const TimerList({
@@ -205,6 +214,7 @@ class TimerList extends StatelessWidget {
     required this.updateActive,
     required this.updateEvery,
     required this.delete,
+    required this.setEnabled,
     required this.timers,
   });
 
@@ -221,6 +231,7 @@ class TimerList extends StatelessWidget {
         doUpdateActive(time.Duration newActive) => updateActive(idx, newActive);
         doUpdateEvery(time.Duration newEvery) => updateEvery(idx, newEvery);
         doDelete() => delete(idx);
+        doSetEnabled(bool newEnabled) => setEnabled(idx, newEnabled);
 
         return TimerCard(
           pad: pad,
@@ -229,13 +240,14 @@ class TimerList extends StatelessWidget {
           doUpdateActive: doUpdateActive,
           doUpdateEvery: doUpdateEvery,
           doDelete: doDelete,
+          doSetEnabled: doSetEnabled,
         );
       },
     );
   }
 }
 
-class TimerCard extends StatelessWidget {
+class TimerCard extends StatefulWidget {
   const TimerCard({
     super.key,
     required this.pad,
@@ -244,6 +256,7 @@ class TimerCard extends StatelessWidget {
     required this.doUpdateActive,
     required this.doUpdateEvery,
     required this.doDelete,
+    required this.doSetEnabled,
   });
 
   final EdgeInsets pad;
@@ -252,40 +265,76 @@ class TimerCard extends StatelessWidget {
   final Function(String newNoto) doUpdateNoto;
   final Function(time.Duration newValue) doUpdateActive;
   final Function(time.Duration newValue) doUpdateEvery;
+  final Function(bool newValue) doSetEnabled;
   final Function() doDelete;
 
   @override
+  State<TimerCard> createState() => _TimerCardState();
+}
+
+class _TimerCardState extends State<TimerCard> {
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
+    toggleExpanded() {
+      setState(() {
+        _expanded = !_expanded;
+      });
+    }
+
+    var toggleExpandButton = IconButton(
+      onPressed: toggleExpanded,
+      icon: Icon(_expanded
+          ? Icons.arrow_drop_up_rounded
+          : Icons.arrow_drop_down_rounded),
+    );
+
+    List<Widget> expandedItems = [];
+    if (_expanded) {
+      expandedItems = [
+        const Text('wowee'),
+      ];
+    }
+
     return Padding(
-      padding: pad,
+      padding: widget.pad,
       child: Card(
         child: InkWell(
           borderRadius: BorderRadius.circular(8.0),
-          //onTap: () {},
+          onTap: toggleExpanded,
           onLongPress: () {
             // TODO show popup that lets you delete/disable/etc
-            doDelete();
+            widget.doDelete();
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SelectableCard(
-                  onTap: () async {
-                    var text = await showDialog(
-                      context: context,
-                      builder: (context) => StringSelector(
-                        start: timer.noto,
-                        title: 'Notification text',
-                      ),
-                    );
+                Row(
+                  children: [
+                    Expanded(
+                      child: SelectableCard(
+                        onTap: () async {
+                          var text = await showDialog(
+                            context: context,
+                            builder: (context) => StringSelector(
+                              start: widget.timer.noto,
+                              title: 'Notification text',
+                            ),
+                          );
 
-                    if (text != null) {
-                      doUpdateNoto(text);
-                    }
-                  },
-                  label: Text(timer.noto),
+                          if (text != null) {
+                            widget.doUpdateNoto(text);
+                          }
+                        },
+                        label: Text(widget.timer.noto),
+                      ),
+                    ),
+                    Switch(value: widget.timer.enabled, onChanged: widget.doSetEnabled),
+                    toggleExpandButton,
+                  ],
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 6.0),
@@ -299,15 +348,15 @@ class TimerCard extends StatelessWidget {
                           var selected = await showDialog<time.Duration>(
                             context: context,
                             builder: (ctx) => DurationSelector(
-                              start: timer.interval.active,
+                              start: widget.timer.interval.active,
                               title: 'Select length of alert',
                             ),
                           );
                           if (selected != null) {
-                            doUpdateActive(selected);
+                            widget.doUpdateActive(selected);
                           }
                         },
-                        label: Text(timer.interval.active.toString()),
+                        label: Text(widget.timer.interval.active.toString()),
                       ),
                       const Text('every'),
                       SelectableCard(
@@ -315,24 +364,60 @@ class TimerCard extends StatelessWidget {
                           var selected = await showDialog<time.Duration>(
                             context: context,
                             builder: (ctx) => DurationSelector(
-                              start: timer.interval.every,
+                              start: widget.timer.interval.every,
                               title: 'Select time between alerts',
                             ),
                           );
                           if (selected != null) {
-                            doUpdateEvery(selected);
+                            widget.doUpdateEvery(selected);
                           }
                         },
-                        label: Text(timer.interval.every.toString()),
+                        label: Text(widget.timer.interval.every.toString()),
                       ),
                     ],
                   ),
                 ),
+                ...expandedItems
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class SingleChoice extends StatefulWidget {
+  const SingleChoice({super.key});
+
+  @override
+  State<SingleChoice> createState() => _SingleChoiceState();
+}
+
+class _SingleChoiceState extends State<SingleChoice> {
+  bool enabled = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentedButton<bool>(
+      segments: <ButtonSegment<bool>>[
+        ButtonSegment<bool>(
+          value: true,
+          label: enabled ? const Text('Enabled') : null,
+          icon: enabled ? null : const Icon(Icons.check_circle),
+        ),
+        ButtonSegment<bool>(
+          value: false,
+          label: enabled ? null : const Text('Disabled'),
+          icon: enabled ? const Icon(Icons.close_rounded) : null,
+        ),
+      ],
+      selected: <bool>{enabled},
+      onSelectionChanged: (Set<bool> newSelection) {
+        setState(() {
+          enabled = newSelection.first;
+        });
+      },
     );
   }
 }

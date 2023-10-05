@@ -92,16 +92,19 @@ class IntervalPeriod {
 class Timer {
   IntervalPeriod interval;
   String noto;
+  bool enabled = true;
 
   Timer({required this.interval, required this.noto});
 
   Timer.fromJson(Map<String, dynamic> json)
       : interval = IntervalPeriod.fromJson(json['interval']),
-        noto = json['noto'];
+        noto = json['noto'],
+        enabled = json['enabled'] ?? true;
 
   Map<String, dynamic> toJson() => {
         'interval': interval.toJson(),
         'noto': noto,
+        'enabled': enabled,
       };
 }
 
