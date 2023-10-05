@@ -1,8 +1,74 @@
+import 'dart:convert';
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path_provider_android/path_provider_android.dart';
+
 import 'time.dart' as time;
 
 void main() {
+  assert(Platform.isAndroid);
   runApp(const MyApp());
+}
+
+class Settings {
+  List<time.Timer> timers;
+  Settings(this.timers);
+
+  static Settings fromJson(Map<String, dynamic> json) {
+    List<time.Timer> timers = List.from(json['timers'].map((e) {
+      time.Timer timer = time.Timer.fromJson(e);
+      return timer;
+    }));
+    return Settings(timers);
+    //: timers =
+  }
+
+  Map<String, dynamic> toJson() => {
+        'timers': timers.map((e) => e.toJson()).toList(),
+      };
+}
+
+class SettingsStorage {
+  static bool registered = false;
+
+  Future<String> get _localPath async {
+    if (!registered) {
+      WidgetsFlutterBinding.ensureInitialized();
+      PathProviderAndroid.registerWith();
+      registered = true;
+    }
+
+    final directory = await getApplicationDocumentsDirectory();
+    return directory.path;
+  }
+
+  Future<File> get _localFile async {
+    final path = await _localPath;
+    return File('$path/counter.txt');
+  }
+
+  Future<Settings?> readSettings() async {
+    try {
+      final file = await _localFile;
+
+      // Read the file
+      final contents = await file.readAsString();
+      Map<String, dynamic> json = jsonDecode(contents);
+
+      return Settings.fromJson(json);
+    } catch (e) {
+      // If encountering an error, return 0
+      return null;
+    }
+  }
+
+  Future<File> writeSettings(Settings settings) async {
+    final file = await _localFile;
+    return file.writeAsString(jsonEncode(settings));
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -17,69 +83,59 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Interval timers'),
+      home: MyHomePage(
+        title: 'Interval timers',
+        storage: SettingsStorage(),
+      ),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  const MyHomePage({super.key, required this.title, required this.storage});
 
   final String title;
+  final SettingsStorage storage;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<time.Timer> timers = [
-    time.Timer(
-      time.IntervalPeriod(
-        time.Duration(10, time.Magnitude.minutes),
-        time.Duration(1, time.Magnitude.hours),
-      ),
-      'Stand up',
-    ),
-    time.Timer(
-      time.IntervalPeriod(
-        time.Duration(10, time.Magnitude.minutes),
-        time.Duration(1, time.Magnitude.hours),
-      ),
-      'Sit down',
-    ),
-    time.Timer(
-      time.IntervalPeriod(
-        time.Duration(10, time.Magnitude.minutes),
-        time.Duration(1, time.Magnitude.hours),
-      ),
-      'Jump around',
-    ),
-    time.Timer(
-      time.IntervalPeriod(
-        time.Duration(10, time.Magnitude.minutes),
-        time.Duration(1, time.Magnitude.hours),
-      ),
-      'Screech',
-    ),
-  ];
+  Settings settings = Settings([]);
+
+  @override
+  void initState() {
+    super.initState();
+    widget.storage.readSettings().then((value) {
+      setState(() {
+        if (value != null) {
+          settings = value;
+        }
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     updateActive(idx, newActive) {
       setState(() {
-        timers[idx].interval.active = newActive;
+        settings.timers[idx].interval.active = newActive;
+        widget.storage.writeSettings(settings);
       });
     }
 
     updateEvery(idx, newEvery) {
       setState(() {
-        timers[idx].interval.every = newEvery;
+        settings.timers[idx].interval.every = newEvery;
+        widget.storage.writeSettings(settings);
       });
     }
 
     updateNoto(idx, newNoto) {
       setState(() {
-        timers[idx].noto = newNoto;
+        settings.timers[idx].noto = newNoto;
+        widget.storage.writeSettings(settings);
       });
     }
 
@@ -98,7 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
         updateNoto: updateNoto,
         updateActive: updateActive,
         updateEvery: updateEvery,
-        timers: timers,
+        timers: settings.timers,
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
