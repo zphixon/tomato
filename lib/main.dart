@@ -141,8 +141,32 @@ class _MyHomePageState extends State<MyHomePage> {
 
     delete(idx) {
       setState(() {
-        settings.timers.removeAt(idx);
+        time.Timer deleted = settings.timers.removeAt(idx);
         widget.storage.writeSettings(settings);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Row(
+            //mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Deleted "'),
+              Flexible(
+                child: Text(
+                  deleted.noto,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const Text('"')
+            ],
+          ),
+          action: SnackBarAction(
+            label: "Undo",
+            onPressed: () {
+              setState(() {
+                settings.timers.insert(idx, deleted);
+                widget.storage.writeSettings(settings);
+              });
+            },
+          ),
+        ));
       });
     }
 
@@ -272,6 +296,8 @@ class TimerCard extends StatefulWidget {
   State<TimerCard> createState() => _TimerCardState();
 }
 
+enum TimerLongPressAction { delete }
+
 class _TimerCardState extends State<TimerCard> {
   bool _expanded = false;
 
@@ -292,9 +318,7 @@ class _TimerCardState extends State<TimerCard> {
 
     List<Widget> expandedItems = [];
     if (_expanded) {
-      expandedItems = [
-        const Text('wowee'),
-      ];
+      expandedItems = [DaySelect()];
     }
 
     return Padding(
@@ -303,9 +327,33 @@ class _TimerCardState extends State<TimerCard> {
         child: InkWell(
           borderRadius: BorderRadius.circular(8.0),
           onTap: toggleExpanded,
-          onLongPress: () {
-            // TODO show popup that lets you delete/disable/etc
-            widget.doDelete();
+          onLongPress: () async {
+            var title = 'Edit "${widget.timer.noto}"';
+
+            TimerLongPressAction? action = await showDialog(
+              context: context,
+              builder: (context) => ActionSelector(
+                title: title,
+                actions: [
+                  ActionItem(
+                    const Icon(Icons.close),
+                    Text(
+                      'Delete "${widget.timer.noto}"',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    TimerLongPressAction.delete,
+                  ),
+                ],
+              ),
+            );
+
+            switch (action) {
+              case null:
+                break;
+              case TimerLongPressAction.delete:
+                widget.doDelete();
+                break;
+            }
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4.0),
@@ -332,7 +380,10 @@ class _TimerCardState extends State<TimerCard> {
                         label: Text(widget.timer.noto),
                       ),
                     ),
-                    Switch(value: widget.timer.enabled, onChanged: widget.doSetEnabled),
+                    Switch(
+                      value: widget.timer.enabled,
+                      onChanged: widget.doSetEnabled,
+                    ),
                     toggleExpandButton,
                   ],
                 ),
@@ -383,6 +434,90 @@ class _TimerCardState extends State<TimerCard> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class DaySelect extends StatefulWidget {
+  const DaySelect({super.key});
+
+  @override
+  State<DaySelect> createState() => _DaySelectState();
+}
+
+class _DaySelectState extends State<DaySelect> {
+  Set<time.Day> selection = time.Day.values.toSet();
+
+  @override
+  Widget build(BuildContext context) {
+    const smallStyle = TextStyle(fontSize: 9);
+
+    return SegmentedButton<time.Day>(
+      segments: const <ButtonSegment<time.Day>>[
+        ButtonSegment<time.Day>(value: time.Day.sunday, label: Text('Sun', style: smallStyle)),
+        ButtonSegment<time.Day>(value: time.Day.monday, label: Text('Mon', style: smallStyle)),
+        ButtonSegment<time.Day>(value: time.Day.tuesday, label: Text('Tue', style: smallStyle)),
+        ButtonSegment<time.Day>(value: time.Day.wednesday, label: Text('Wed', style: smallStyle)),
+        ButtonSegment<time.Day>(value: time.Day.thursday, label: Text('Thu', style: smallStyle)),
+        ButtonSegment<time.Day>(value: time.Day.friday, label: Text('Fri', style: smallStyle)),
+        ButtonSegment<time.Day>(value: time.Day.saturday, label: Text('Sat', style: smallStyle)),
+      ],
+      selected: selection,
+      onSelectionChanged: (Set<time.Day> newSelection) {
+        setState(() {
+          selection = newSelection;
+        });
+      },
+      showSelectedIcon: false,
+      emptySelectionAllowed: true,
+      multiSelectionEnabled: true,
+    );
+  }
+}
+
+class ActionItem<T> {
+  final Icon icon;
+  final Text text;
+  final T action;
+  const ActionItem(this.icon, this.text, this.action);
+}
+
+class ActionSelector<T> extends StatelessWidget {
+  const ActionSelector({
+    super.key,
+    required this.title,
+    required this.actions,
+  });
+
+  final String title;
+  final List<ActionItem<T>> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        title,
+        overflow: TextOverflow.ellipsis,
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: actions.map((item) {
+          return MenuItemButton(
+            onPressed: () => Navigator.pop(context, item.action),
+            leadingIcon: item.icon,
+            child: SizedBox(
+              width: 150,
+              child: item.text,
+            ),
+          );
+        }).toList(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+      ],
     );
   }
 }

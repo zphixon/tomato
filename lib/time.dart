@@ -108,27 +108,29 @@ class Timer {
       };
 }
 
+enum Day { sunday, monday, tuesday, wednesday, thursday, friday, saturday }
+
 class Schedule {
   TimeOfDay? start = const TimeOfDay(hour: 9, minute: 0);
   TimeOfDay? end = const TimeOfDay(hour: 12 + 5, minute: 0);
 
-  bool monday = true;
-  bool tuesday = true;
-  bool wednesday = true;
-  bool thursday = true;
-  bool friday = true;
-  bool saturday = false;
-  bool sunday = false;
+  Set<Day> days = const {
+    Day.sunday,
+    Day.monday,
+    Day.tuesday,
+    Day.wednesday,
+    Day.thursday,
+    Day.friday,
+    Day.saturday,
+  };
 
   Schedule({
     this.start,
     this.end,
-    this.monday = true,
-    this.tuesday = true,
-    this.wednesday = true,
-    this.thursday = true,
-    this.friday = true,
-    this.saturday = false,
-    this.sunday = false,
-  });
+    Set<Day>? days,
+  }) {
+    if (days != null) {
+      this.days = days;
+    }
+  }
 }
