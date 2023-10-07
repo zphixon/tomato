@@ -93,22 +93,76 @@ class Timer {
   IntervalPeriod interval;
   String noto;
   bool enabled = true;
+  Schedule schedule = Schedule();
 
   Timer({required this.interval, required this.noto});
 
   Timer.fromJson(Map<String, dynamic> json)
       : interval = IntervalPeriod.fromJson(json['interval']),
         noto = json['noto'],
-        enabled = json['enabled'] ?? true;
+        enabled = json['enabled'] ?? true,
+        schedule = json.containsKey('schedule')
+            ? Schedule.fromJson(json['schedule'])
+            : Schedule();
 
   Map<String, dynamic> toJson() => {
         'interval': interval.toJson(),
         'noto': noto,
         'enabled': enabled,
+        'schedule': schedule.toJson(),
       };
 }
 
-enum Day { sunday, monday, tuesday, wednesday, thursday, friday, saturday }
+enum Day {
+  sunday,
+  monday,
+  tuesday,
+  wednesday,
+  thursday,
+  friday,
+  saturday;
+
+  @override
+  String toString() {
+    switch (this) {
+      case Day.sunday:
+        return 'sunday';
+      case Day.monday:
+        return 'monday';
+      case Day.tuesday:
+        return 'tuesday';
+      case Day.wednesday:
+        return 'wednesday';
+      case Day.thursday:
+        return 'thursday';
+      case Day.friday:
+        return 'friday';
+      case Day.saturday:
+        return 'saturday';
+    }
+  }
+
+  static Day fromString(String s) {
+    switch (s) {
+      case 'sunday':
+        return Day.sunday;
+      case 'monday':
+        return Day.monday;
+      case 'tuesday':
+        return Day.tuesday;
+      case 'wednesday':
+        return Day.wednesday;
+      case 'thursday':
+        return Day.thursday;
+      case 'friday':
+        return Day.friday;
+      case 'saturday':
+        return Day.saturday;
+      default:
+        throw Exception('not a day: $s');
+    }
+  }
+}
 
 class Schedule {
   TimeOfDay? start = const TimeOfDay(hour: 9, minute: 0);
@@ -132,5 +186,37 @@ class Schedule {
     if (days != null) {
       this.days = days;
     }
+  }
+
+  Schedule.fromJson(Map<String, dynamic> json)
+      : start = json.containsKey('start')
+            ? TimeOfDay(
+                hour: json['start']['hour'],
+                minute: json['start']['minute'],
+              )
+            : null,
+        end = json.containsKey('end')
+            ? TimeOfDay(
+                hour: json['end']['hour'],
+                minute: json['end']['minute'],
+              )
+            : null,
+        days = json.containsKey('days')
+            ? (json['days'] as List)
+                .map((e) => e as String)
+                .map(Day.fromString)
+                .toSet()
+            : Day.values.toSet();
+
+  Map<String, dynamic> toJson() {
+    var map = <String, dynamic>{};
+    if (start != null) {
+      map.putIfAbsent('start', () => start.toString());
+    }
+    if (end != null) {
+      map.putIfAbsent('end', () => end.toString());
+    }
+    map.putIfAbsent('days', () => days.map((e) => e.toString()).toList());
+    return map;
   }
 }

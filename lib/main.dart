@@ -67,7 +67,8 @@ class SettingsStorage {
 
   Future<File> writeSettings(Settings settings) async {
     final file = await _localFile;
-    return file.writeAsString(jsonEncode(settings));
+    String settingsJson = jsonEncode(settings);
+    return file.writeAsString(settingsJson);
   }
 }
 
@@ -196,6 +197,13 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     }
 
+    setDays(idx, newDays) {
+      setState(() {
+        settings.timers[idx].schedule.days = newDays;
+        widget.storage.writeSettings(settings);
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -213,6 +221,7 @@ class _MyHomePageState extends State<MyHomePage> {
         updateEvery: updateEvery,
         delete: delete,
         setEnabled: setEnabled,
+        setDays: setDays,
         timers: settings.timers,
       ),
       floatingActionButton: FloatingActionButton(
@@ -230,6 +239,7 @@ class TimerList extends StatelessWidget {
   final Function(int idx, time.Duration newEvery) updateEvery;
   final Function(int idx) delete;
   final Function(int idx, bool newEnabled) setEnabled;
+  final Function(int idx, Set<time.Day> newDays) setDays;
   final List<time.Timer> timers;
 
   const TimerList({
@@ -239,6 +249,7 @@ class TimerList extends StatelessWidget {
     required this.updateEvery,
     required this.delete,
     required this.setEnabled,
+    required this.setDays,
     required this.timers,
   });
 
@@ -256,6 +267,7 @@ class TimerList extends StatelessWidget {
         doUpdateEvery(time.Duration newEvery) => updateEvery(idx, newEvery);
         doDelete() => delete(idx);
         doSetEnabled(bool newEnabled) => setEnabled(idx, newEnabled);
+        doSetDays(Set<time.Day> newDays) => setDays(idx, newDays);
 
         return TimerCard(
           pad: pad,
@@ -265,6 +277,7 @@ class TimerList extends StatelessWidget {
           doUpdateEvery: doUpdateEvery,
           doDelete: doDelete,
           doSetEnabled: doSetEnabled,
+          doSetDays: doSetDays,
         );
       },
     );
@@ -281,6 +294,7 @@ class TimerCard extends StatefulWidget {
     required this.doUpdateEvery,
     required this.doDelete,
     required this.doSetEnabled,
+    required this.doSetDays,
   });
 
   final EdgeInsets pad;
@@ -291,6 +305,7 @@ class TimerCard extends StatefulWidget {
   final Function(time.Duration newValue) doUpdateEvery;
   final Function(bool newValue) doSetEnabled;
   final Function() doDelete;
+  final Function(Set<time.Day> newDays) doSetDays;
 
   @override
   State<TimerCard> createState() => _TimerCardState();
@@ -318,7 +333,12 @@ class _TimerCardState extends State<TimerCard> {
 
     List<Widget> expandedItems = [];
     if (_expanded) {
-      expandedItems = [DaySelect()];
+      expandedItems = [
+        DaySelect(
+          days: widget.timer.schedule.days,
+          onSelectionChanged: widget.doSetDays,
+        )
+      ];
     }
 
     return Padding(
@@ -438,15 +458,15 @@ class _TimerCardState extends State<TimerCard> {
   }
 }
 
-class DaySelect extends StatefulWidget {
-  const DaySelect({super.key});
+class DaySelect extends StatelessWidget {
+  final Set<time.Day> days;
+  final Function(Set<time.Day> days) onSelectionChanged;
 
-  @override
-  State<DaySelect> createState() => _DaySelectState();
-}
-
-class _DaySelectState extends State<DaySelect> {
-  Set<time.Day> selection = time.Day.values.toSet();
+  const DaySelect({
+    super.key,
+    required this.days,
+    required this.onSelectionChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -454,20 +474,23 @@ class _DaySelectState extends State<DaySelect> {
 
     return SegmentedButton<time.Day>(
       segments: const <ButtonSegment<time.Day>>[
-        ButtonSegment<time.Day>(value: time.Day.sunday, label: Text('Sun', style: smallStyle)),
-        ButtonSegment<time.Day>(value: time.Day.monday, label: Text('Mon', style: smallStyle)),
-        ButtonSegment<time.Day>(value: time.Day.tuesday, label: Text('Tue', style: smallStyle)),
-        ButtonSegment<time.Day>(value: time.Day.wednesday, label: Text('Wed', style: smallStyle)),
-        ButtonSegment<time.Day>(value: time.Day.thursday, label: Text('Thu', style: smallStyle)),
-        ButtonSegment<time.Day>(value: time.Day.friday, label: Text('Fri', style: smallStyle)),
-        ButtonSegment<time.Day>(value: time.Day.saturday, label: Text('Sat', style: smallStyle)),
+        ButtonSegment<time.Day>(
+            value: time.Day.sunday, label: Text('Sun', style: smallStyle)),
+        ButtonSegment<time.Day>(
+            value: time.Day.monday, label: Text('Mon', style: smallStyle)),
+        ButtonSegment<time.Day>(
+            value: time.Day.tuesday, label: Text('Tue', style: smallStyle)),
+        ButtonSegment<time.Day>(
+            value: time.Day.wednesday, label: Text('Wed', style: smallStyle)),
+        ButtonSegment<time.Day>(
+            value: time.Day.thursday, label: Text('Thu', style: smallStyle)),
+        ButtonSegment<time.Day>(
+            value: time.Day.friday, label: Text('Fri', style: smallStyle)),
+        ButtonSegment<time.Day>(
+            value: time.Day.saturday, label: Text('Sat', style: smallStyle)),
       ],
-      selected: selection,
-      onSelectionChanged: (Set<time.Day> newSelection) {
-        setState(() {
-          selection = newSelection;
-        });
-      },
+      selected: days,
+      onSelectionChanged: onSelectionChanged,
       showSelectedIcon: false,
       emptySelectionAllowed: true,
       multiSelectionEnabled: true,
